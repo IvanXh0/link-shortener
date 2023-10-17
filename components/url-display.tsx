@@ -1,12 +1,16 @@
 import userUrlStore from "@/store/url.store";
 
 export default async function UrlDisplay() {
-  const urls = userUrlStore.getState().getUrls();
   return (
     <div className="flex flex-col p-15 font-bold text-xl">
-      {urls.map((url) => (
-        <p key={url}>{url}</p>
-      ))}
+      {userUrlStore
+        .getState()
+        .getUrls()
+        .map((url, idx) => (
+          <a key={idx} href={url} target="_blank">
+            <p key={idx}>{url}</p>
+          </a>
+        ))}
     </div>
   );
 }
