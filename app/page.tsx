@@ -1,34 +1,54 @@
-"use client";
-import axios from "axios";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import UrlDisplay from "@/components/url-display";
+import userUrlStore from "@/store/url.store";
+import { revalidatePath } from "next/cache";
 
-export default function Home() {
-  const [url, setUrl] = useState("");
+export default async function Home() {
+  async function create(formData: FormData) {
+    "use server";
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
+    const url = formData.get("url") as string;
 
-    const response = await axios.post("api/link-shortener", {
-      url: new URL(url).href,
-    });
+    try {
+      const res = await fetch("https://cleanuri.com/api/v1/shorten", {
+        method: "POST",
+        body: JSON.stringify({ url }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    console.log(response);
-  };
+      if (res.ok) {
+        const data = await res.json();
+
+        userUrlStore.getState().addUrl(data.result_url);
+
+        revalidatePath("/");
+      } else {
+        console.error("Failed to shorten the URL");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
   return (
-    <main>
-      <h1>
-        Welcome to <a href="https://nextjs.org">Next.js!</a>
-      </h1>
+    <main className="flex flex-col items-center justify-center max-w-screen h-screen">
       <div>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={url}
-            name="long"
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <button type="submit">Submit</button>
+        <h2 className="text-3xl font-bold p-5">Enter a URL to shorten it</h2>
+        <form
+          action={create}
+          className="flex items-center align-center justify-center flex-col"
+        >
+          <Input type="text" name="url" />
+          <Button variant="default" className="p-5 mt-5 text-md" type="submit">
+            Submit
+          </Button>
         </form>
+      </div>
+      <div className="flex flex-col p-12">
+        <h3>Shortened urls</h3>
+        <UrlDisplay />
       </div>
     </main>
   );
