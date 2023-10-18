@@ -4,8 +4,6 @@ import userUrlStore from "@/store/url.store";
 import { revalidatePath } from "next/cache";
 
 export async function create(formData: FormData) {
-  "use server";
-
   const url = formData.get("url") as string;
 
   try {

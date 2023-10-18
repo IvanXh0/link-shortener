@@ -4,6 +4,7 @@ import Home from "@/app/page";
 import { handlers } from "../mocks";
 import { setupServer } from "msw/native";
 import { create } from "@/actions/create";
+import { deleteAll } from "@/actions/deleteAll";
 import userUrlStore from "@/store/url.store";
 
 global.fetch = jest.fn();
@@ -20,7 +21,7 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-describe("It renders the homepage", () => {
+describe("Homepage", () => {
   it("should render the homepage", async () => {
     const HomeResolved = await Home();
 
@@ -111,6 +112,22 @@ describe("It renders the homepage", () => {
       );
 
       expect(require("next/cache").revalidatePath).toHaveBeenCalledWith("/");
+    });
+  });
+  it("should delete all urls", async () => {
+    const HomeResolved = await Home();
+
+    render(HomeResolved);
+
+    const button = screen.getByRole("button", { name: "Delete History" });
+
+    expect(button).toBeInTheDocument();
+
+    fireEvent.click(button);
+
+    await waitFor(async () => {
+      await deleteAll();
+      expect(userUrlStore.getState().getUrls()).toHaveLength(0);
     });
   });
 });
