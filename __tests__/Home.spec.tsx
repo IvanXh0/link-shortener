@@ -1,21 +1,31 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Home from "@/app/page";
 import { handlers } from "../mocks";
 import { setupServer } from "msw/native";
-import { create } from "domain";
+import { create } from "@/actions/create";
+
+global.fetch = jest.fn();
+
+jest.mock("next/cache", () => {
+  return {
+    revalidate: jest.fn(),
+  };
+});
 
 describe("It renders the homepage", () => {
+  const server = setupServer(...handlers);
+
   beforeAll(() => {
-    setupServer(...handlers).listen();
+    server.listen();
   });
 
   afterEach(() => {
-    setupServer(...handlers).resetHandlers();
+    server.resetHandlers();
   });
 
   afterAll(() => {
-    setupServer(...handlers).close();
+    server.close();
   });
 
   it("should render the homepage", async () => {
@@ -25,25 +35,51 @@ describe("It renders the homepage", () => {
 
     expect(screen.getByText("Enter a URL to shorten it")).toBeInTheDocument();
   });
+  it("should send the post request and recieve accurate data", async () => {
+    const mockResponse = {
+      ok: true,
+      json: () =>
+        Promise.resolve({ result_url: "https://example.com/shortened" }),
+    };
 
-  it("should render data from the api", async () => {
-    const HomeResolved = await Home();
+    global.fetch.mockResolvedValueOnce(mockResponse);
 
-    render(HomeResolved);
+    const formData = new FormData();
+    formData.append("url", "https://example.com");
+    await create(formData);
 
-    const inputField = screen.getByTestId("url-input");
-    const submitBtn = screen.getByTestId("submit");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://cleanuri.com/api/v1/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: "https://example.com" }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  });
+  it("should fail with error", async () => {
+    const mockResponse = {
+      ok: false,
+      json: () => Promise.resolve({}),
+    };
 
-    expect(inputField).toBeInTheDocument();
+    global.fetch.mockResolvedValueOnce(mockResponse);
 
-    fireEvent.change(inputField, { target: { value: "https://google.com" } });
+    const formData = new FormData();
+    formData.append("url", "https://example.com");
+    await create(formData);
 
-    // submitBtn.onclick = () => create(new FormData(screen.getByTestId("form")));
-
-    // fireEvent.submit(screen.getByTestId("submit"));
-
-    await waitFor(() => {
-      expect(screen.getByText("Shortened urls")).toBeInTheDocument();
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://cleanuri.com/api/v1/shorten",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: "https://example.com" }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
   });
 });
