@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Home from "@/app/page";
 import { handlers } from "../mocks";
@@ -9,25 +9,17 @@ global.fetch = jest.fn();
 
 jest.mock("next/cache", () => {
   return {
-    revalidate: jest.fn(),
+    revalidatePath: jest.fn(),
   };
 });
 
+const server = setupServer(...handlers);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
 describe("It renders the homepage", () => {
-  const server = setupServer(...handlers);
-
-  beforeAll(() => {
-    server.listen();
-  });
-
-  afterEach(() => {
-    server.resetHandlers();
-  });
-
-  afterAll(() => {
-    server.close();
-  });
-
   it("should render the homepage", async () => {
     const HomeResolved = await Home();
 
@@ -81,5 +73,30 @@ describe("It renders the homepage", () => {
         },
       },
     );
+  });
+  it("should render the response on page", async () => {
+    const HomeResolved = await Home();
+
+    render(HomeResolved);
+
+    const input = screen.getByTestId("url-input");
+
+    fireEvent.change(input, { target: { value: "https://example.com" } });
+
+    const button = screen.getByTestId("submit");
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("https://example.com/shortened"),
+      ).toBeInTheDocument();
+
+      expect(
+        screen.getByRole("button", { name: "Delete History" }),
+      ).toBeInTheDocument();
+
+      expect(require("next/cache").revalidatePath).toHaveBeenCalledWith("/");
+    });
   });
 });
