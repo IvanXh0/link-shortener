@@ -4,6 +4,7 @@ import Home from "@/app/page";
 import { handlers } from "../mocks";
 import { setupServer } from "msw/native";
 import { create } from "@/actions/create";
+import userUrlStore from "@/store/url.store";
 
 global.fetch = jest.fn();
 
@@ -50,6 +51,12 @@ describe("It renders the homepage", () => {
         },
       },
     );
+
+    expect(userUrlStore.getState().getUrls()).toContain(
+      "https://example.com/shortened",
+    );
+
+    expect(require("next/cache").revalidatePath).toHaveBeenCalledWith("/");
   });
   it("should fail with error", async () => {
     const mockResponse = {
@@ -73,6 +80,9 @@ describe("It renders the homepage", () => {
         },
       },
     );
+    expect(userUrlStore.getState().getUrls()).not.toContain(
+      "https://example.com",
+    );
   });
   it("should render the response on page", async () => {
     const HomeResolved = await Home();
@@ -95,6 +105,10 @@ describe("It renders the homepage", () => {
       expect(
         screen.getByRole("button", { name: "Delete History" }),
       ).toBeInTheDocument();
+
+      expect(userUrlStore.getState().getUrls()).toContain(
+        "https://example.com/shortened",
+      );
 
       expect(require("next/cache").revalidatePath).toHaveBeenCalledWith("/");
     });
