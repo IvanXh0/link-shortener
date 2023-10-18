@@ -1,5 +1,3 @@
-import { create } from "zustand";
-
 interface UrlStore {
   urls: string[];
   addUrl: (url: string) => void;
@@ -7,17 +5,25 @@ interface UrlStore {
   getUrls: () => string[];
 }
 
-const userUrlStore = create<UrlStore>((set, get) => ({
-  urls: [],
-  addUrl: (url) =>
-    set((state) => ({
-      urls: [...state.urls, url],
-    })),
-  removeUrls: () =>
-    set(() => ({
-      urls: [],
-    })),
-  getUrls: () => get().urls,
-}));
+class xStore implements UrlStore {
+  urls: string[] = [];
+  addUrl(url: string) {
+    this.urls.push(url);
+  }
+  removeUrls() {
+    this.urls = [];
+  }
+  getUrls() {
+    return this.urls;
+  }
+}
+
+const store = new xStore();
+
+const userUrlStore = {
+  getState() {
+    return store;
+  },
+};
 
 export default userUrlStore;

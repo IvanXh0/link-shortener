@@ -24,7 +24,7 @@ export default async function Home() {
 
         userUrlStore.getState().addUrl(data.result_url);
 
-        return revalidatePath("/");
+        revalidatePath("/");
       } else {
         console.error("Failed to shorten the URL");
       }
@@ -38,7 +38,7 @@ export default async function Home() {
 
     userUrlStore.getState().removeUrls();
 
-    return revalidatePath("/");
+    revalidatePath("/");
   }
   return (
     <main className="flex flex-col items-center justify-center max-w-screen h-screen">
@@ -48,9 +48,21 @@ export default async function Home() {
           action={create}
           key={Math.random()}
           className="flex items-center align-center justify-center flex-col"
+          data-testid="form"
         >
-          <Input type="text" name="url" id="url" defaultValue="" />
-          <Button variant="default" className="p-5 mt-5 text-md" type="submit">
+          <Input
+            type="text"
+            name="url"
+            id="url"
+            data-testid="url-input"
+            defaultValue=""
+          />
+          <Button
+            data-testid="submit"
+            variant="default"
+            className="p-5 mt-5 text-md"
+            type="submit"
+          >
             Submit
           </Button>
         </form>
