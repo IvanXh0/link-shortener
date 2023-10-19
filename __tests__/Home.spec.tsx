@@ -62,7 +62,6 @@ describe("Homepage", () => {
   it("should fail with error", async () => {
     const mockResponse = {
       ok: false,
-      json: () => Promise.resolve({}),
     };
 
     global.fetch.mockResolvedValueOnce(mockResponse);
@@ -110,6 +109,8 @@ describe("Homepage", () => {
       expect(userUrlStore.getState().getUrls()).toContain(
         "https://example.com/shortened",
       );
+
+      expect(screen.getByTestId("qr-code")).toBeInTheDocument();
 
       expect(require("next/cache").revalidatePath).toHaveBeenCalledWith("/");
     });
